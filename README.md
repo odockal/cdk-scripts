@@ -32,7 +32,7 @@ Script also executes 'minishift setup-cdk' in case that this command was not exe
 ### Usage
 
     $ cdk3-stop.sh -p minishift_binary
-* -p, --path is a requird parameter that contains path to minishift binary file
+* -p, --path is a required parameter that contains path to minishift binary file
 
 ### cdk3-cleanup.sh
 
@@ -41,4 +41,9 @@ In such situation, given minishift binary is downloaded via given parameter, and
 
 ### Usage
 
-* $ cdk3-stop.sh -p minishift_binary
+* $ cdk3-cleanup.sh -p minishift_path -u minishift_url -h minishift_home
+* -p, --path param. that is required and represents a path with minishift binary or directory where new minishift will be downloaded
+* -u, --url (optional) - CDK/minishift binary url to download"
+* -h, --home parameter minishift home path, overrides MINISHIFT_HOME
+* -e, --erase parameter will erase minishift binary, created folders and minishift home folder"
+

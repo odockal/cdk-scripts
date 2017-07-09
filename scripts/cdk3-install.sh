@@ -51,7 +51,7 @@ while [ $# -gt 1 ]; do
             ;;
         -u | --url)
             shift
-            url_status=$(curl -Is -l ${1} | head -n 1 | grep -i ok)
+            url_status=$(curl -Is -l ${1} | head -n 1 | grep -i http/1 | awk {'print $2'} | grep -E '2[0-9]{2}|3[0-9]{2}')
             log_info "Trying to reach ${1}"
             log_info "URL status: $url_status"
             if [ "${url_status}" ]; then
@@ -78,11 +78,32 @@ cd ${MINISHIFT_PATH}
 log_info "Downloading minishift from ${MINISHIFT_URL}"
 log_info "to $MINISHIFT_PATH"
 
+BASEFILE=$(basename ${MINISHIFT_URL})
+
 wget -O minishift ${MINISHIFT_URL}
 if [ $? == 1 ]; then
     log_error "Downloading ${MINISHIFT_URL} fails to save the file as minishift"
     exit 1
 fi
+
+
+
+#cd ${WORKSPACE}
+#mkdir -p minishift
+#cd minishift
+
+#if [ "${USE_CDK3}" == true ]; then
+#	wget ${CDK3_MINISHIFT_URL}/minishift
+#else
+#	wget ${MINISHIFT_URL}
+#    tar -xvf $(ls | grep minishift)
+#fi
+
+#chmod +x minishift
+
+#if [ "${USE_CDK3}" == true ]; then
+#	./minishift setup-cdk
+#fi
 
 log_info "Make the file executable"
 chmod +x minishift

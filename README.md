@@ -58,4 +58,4 @@ In such situation, given minishift binary is downloaded via given parameter, and
 ### Example
 
     $ cdk3-cleanup.sh -p /home/user/minishift/ -u https://github.com/myuser/cdk-minishift/minishif
-In this case, if given folder in path parameter does not exist, new folder will be created, minishift binary from the given url will be downloaded (if reachable) and presence of MINISHIFT_HOME will b checked, or if $HOME/.minishift folder exists. Then 'minishift stop' and 'minishift delete' will be called.
+In this case, if given folder in path parameter does not exist, new folder is created, minishift binary from the given url is downloaded (if reachable) and presence of MINISHIFT_HOME is checked or if $HOME/.minishift folder exists. Then 'minishift stop' and 'minishift delete' will be called.

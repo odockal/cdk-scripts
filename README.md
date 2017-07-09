@@ -25,6 +25,8 @@ Script are designed to ease installation, configuration and/or cleaning up CDK 3
 
 Script also executes 'minishift setup-cdk' in case that this command was not executed before in given environment (on the machine)
 
+### Example
+
     $ cdk3-install.sh -u https://github.com/myuser/cdk-minishift/minishift -p /home/myuser/existing_minishift/
     
 Scripts downloads (if is reachable) and overwrites existing minishift file in given folder (if such exists). alos tests if downloaded file is actually minishift binary. Runs 'minishift setup-cdk' if was not called before.
@@ -53,6 +55,7 @@ In such situation, given minishift binary is downloaded via given parameter, and
 * -h, --home parameter minishift home path, overrides MINISHIFT_HOME
 * -e, --erase parameter will erase minishift binary, created folders and minishift home folder
 
-    $ cdk3-cleanup.sh --path /home/user/minishift/ --url https://github.com/myuser/cdk-minishift/minishift
-    
+### Example
+
+    $ cdk3-cleanup.sh -p /home/user/minishift/ -u https://github.com/myuser/cdk-minishift/minishif
 In this case, if given folder in path parameter does not exist, new folder will be created, minishift binary from the given url will be downloaded (if reachable) and presence of MINISHIFT_HOME will b checked, or if $HOME/.minishift folder exists. Then 'minishift stop' and 'minishift delete' will be called.

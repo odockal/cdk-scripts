@@ -25,6 +25,9 @@ Script are designed to ease installation, configuration and/or cleaning up CDK 3
 
 Script also executes 'minishift setup-cdk' in case that this command was not executed before in given environment (on the machine)
 
+    $ cdk3-install.sh -u https://github.com/myuser/cdk-minishift/minishift -p /home/myuser/existing_minishift/
+Scripts downloads (if is reachable) and overwrites existing minishift file in given folder (if such exists). alos tests if downloaded file is actually minishift binary. Runs 'minishift setup-cdk' if was not called before.
+
 ### cdk3-stop.sh
 
 * Stops and/or delete running CDK instance of the given minishift binary path
@@ -36,13 +39,18 @@ Script also executes 'minishift setup-cdk' in case that this command was not exe
 
 ### cdk3-cleanup.sh
 
-* Provides set of steps that should stop, delete and remove existing minishift instance and other components that was not successfully removed  on the machine in previous job. One could think of failure in job and would lead to state where minishift vm is still running, but minishift binary was deleted (clean up step in jenkins job, where workspace is erased).
-In such situation, given minishift binary is downloaded via given parameter, and then 'minishift stop' and/or 'minishift delete' are executed. In cases where minishift home folder was erased (.minishift at $HOME location, or if MINISHIFT_HOME env. var was set) there is no chance to connect newly downloaded/ or existing minishift binary to running minishift vm, and clean up steps must be taken manually.
+* Provides set of steps that should stop, delete and remove existing minishift instance and other components that was not successfully removed on the machine in previous job. 
+* One could think of failure in job and would lead to state where minishift vm is still running, but minishift binary was deleted (clean up step in jenkins job, where workspace is erased).
+In such situation, given minishift binary is downloaded via given parameter, and then 'minishift stop' and/or 'minishift delete' are executed. 
+* In cases where minishift home folder was erased (.minishift at $HOME location, or if MINISHIFT_HOME env. var was set) there is no chance to connect newly downloaded/ or existing minishift binary to running minishift vm, and clean up steps must be taken manually.
 
 ### Usage
 
-    $ cdk3-cleanup.sh -p minishift_path -u minishift_url -h minishift_home
-* -p, --path param. that is required and represents a path with minishift binary or directory where new minishift will be downloaded
+    $ cdk3-cleanup.sh -p minishift_path -u minishift_url -h minishift_home -e
+* -p, --path (required) - represents a path with minishift binary or directory where new minishift will be downloaded
 * -u, --url (optional) - CDK/minishift binary url to download"
 * -h, --home parameter minishift home path, overrides MINISHIFT_HOME
-* -e, --erase parameter will erase minishift binary, created folders and minishift home folder"
+* -e, --erase parameter will erase minishift binary, created folders and minishift home folder
+
+    $ cdk3-cleanup.sh --path /home/user/minishift/ --url https://github.com/myuser/cdk-minishift/minishift
+In this case, if given folder in path parameter does not exist, new folder will be created, minishift binary from the given url will be downloaded (if reachable) and presence of MINISHIFT_HOME will b checked, or if $HOME/.minishift folder exists. Then 'minishift stop' and 'minishift delete' will be called.

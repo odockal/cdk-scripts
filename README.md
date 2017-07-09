@@ -41,9 +41,8 @@ In such situation, given minishift binary is downloaded via given parameter, and
 
 ### Usage
 
-* $ cdk3-cleanup.sh -p minishift_path -u minishift_url -h minishift_home
+    $ cdk3-cleanup.sh -p minishift_path -u minishift_url -h minishift_home
 * -p, --path param. that is required and represents a path with minishift binary or directory where new minishift will be downloaded
 * -u, --url (optional) - CDK/minishift binary url to download"
 * -h, --home parameter minishift home path, overrides MINISHIFT_HOME
 * -e, --erase parameter will erase minishift binary, created folders and minishift home folder"
-

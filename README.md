@@ -6,7 +6,7 @@ Script are designed to ease installation, configuration and/or cleaning up CDK 3
 
 ## Operating systems
 * Linux
-* win and mac are planned to be supported in future`
+* win and mac are planned to be supported in future
 
 ### Prerequisites
 

@@ -32,11 +32,14 @@ function minishift_cleanup() {
     local minishift="$(realpath $1)"
     local status="$(${minishift} status)"
     log_info "Minishift status: ${status}"
-    if [ "${status}" == "Running" ]; then
-        ${minishift} stop
-        ${minishift} delete
+    if [ "${status}" == "Running" ] || [ "${status}" == "Paused" ]; then
+        ${minishift} stop || log_warning "minishift stop failed, proceeding..."
+        log_info "Executing 'minishift delete --force'"
+        ${minishift} delete --force
     elif [ "${status}" == "Stopped" ]; then
-        ${minishift} delete
+        ${minishift} stop || log_warning "minishift stop failed, proceeding..."
+        log_info "Executing 'minishift delete --force'"
+        ${minishift} delete --force
     else
         log_info "Do nothing here"
     fi
@@ -73,3 +76,5 @@ if [ ${IS_SOURCE} == 0 ]; then
         shift
     done
 fi
+
+log_info "${__base} script finished successfully"

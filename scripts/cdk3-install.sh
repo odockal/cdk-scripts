@@ -14,18 +14,21 @@ __base="$(basename ${__file} .sh)"
 function usage {
     echo "Minishift install script"
     echo "Synopsis:"
-    echo "       -u minishift_url -p minishift_path"
+    echo "       -u minishift_url -p minishift_path -s setup_params"
     echo "Usage  $0 -u [-p]"
     echo "       -u, --url (required)"
     echo "          CDK/minishift binary url to download, will overwrite existing minishift file"
     echo "       -p, --path (optional)"
     echo "          path where the file should be downloaded"
+    echo "       -s, --setup (optional)"
+    echo "          runs 'minishift setup-cdk' command, if params are given, it runs it with them"
     exit 1
 }
 
 MINISHIFT_PATH=$(pwd)
 MINISHIFT_URL=
 EXISTING=1
+SETUP_CDK=
 
 # At least one parameter is required
 if [ $# -lt 2 ]
@@ -33,7 +36,7 @@ then
   usage
 fi
 
-while [ $# -gt 1 ]; do
+while [ $# -gt 0 ]; do
     case $1 in
         -p | --path)
             shift
@@ -51,14 +54,25 @@ while [ $# -gt 1 ]; do
             ;;
         -u | --url)
             shift
-            url_status=$(curl -Is -l ${1} | head -n 1 | grep -i http/1 | awk {'print $2'} | grep -E '2[0-9]{2}|3[0-9]{2}')
+            url_status=$(http_status_ok ${1})
             log_info "Trying to reach ${1}"
             log_info "URL status: $url_status"
             if [ "${url_status}" ]; then
-                MINISHIFT_URL="${1}"
+                if [ $(url_has_minishift ${1}) == "1" ]; then
+                    MINISHIFT_URL="${1}"
+                else 
+                    MINISHIFT_URL="$(add_url_suffix ${1})"
+                fi
             else
                 log_error "Given minishift url ${1} cannot be reached"
                 exit 1
+            fi
+            ;;
+        -s | --setup)
+            shift
+            SETUP_CDK="setup-cdk"
+            if [ -n "${1}" ]; then
+                SETUP_CDK="${SETUP_CDK} ${1}"
             fi
             ;;
         *)
@@ -75,40 +89,31 @@ fi
 
 cd ${MINISHIFT_PATH}
 
+BASEFILE=$(basename ${MINISHIFT_URL})
+log_info "Basefile name is: ${BASEFILE}"
 log_info "Downloading minishift from ${MINISHIFT_URL}"
 log_info "to $MINISHIFT_PATH"
+if [ -n "${SETUP_CDK}" ]; then
+    log_info "Minishift ${SETUP_CDK} will be called"
+fi
 
-BASEFILE=$(basename ${MINISHIFT_URL})
-
-wget -O minishift ${MINISHIFT_URL}
+wget -O "${BASEFILE}" ${MINISHIFT_URL}
 if [ $? == 1 ]; then
     log_error "Downloading ${MINISHIFT_URL} fails to save the file as minishift"
     exit 1
 fi
 
-
-
-#cd ${WORKSPACE}
-#mkdir -p minishift
-#cd minishift
-
-#if [ "${USE_CDK3}" == true ]; then
-#	wget ${CDK3_MINISHIFT_URL}/minishift
-#else
-#	wget ${MINISHIFT_URL}
-#    tar -xvf $(ls | grep minishift)
-#fi
-
-#chmod +x minishift
-
-#if [ "${USE_CDK3}" == true ]; then
-#	./minishift setup-cdk
-#fi
-
 log_info "Make the file executable"
-chmod +x minishift
+chmod +x ${BASEFILE}
 
-if [ $(minishift_not_initialized "${MINISHIFT_PATH}/minishift") == 1 ]; then
-    log_info "Minishift was not initialized, running 'minishift setup-cdk'"
-    ${MINISHIFT_PATH}/minishift setup-cdk
+if [ $(minishift_not_initialized "${MINISHIFT_PATH}/${BASEFILE}") == 1 ]; then
+    log_info "Minishift was not initialized"
+    if [ -n "${SETUP_CDK}" ]; then
+        log_info "Running ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}"
+        ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}
+    else
+        log_warning "'minishift setup-cdk' will not be called, did you forget to set -s flag?"
+    fi
 fi
+
+log_info "Script $__base was finished successfully"

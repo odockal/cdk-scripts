@@ -28,8 +28,6 @@ function usage {
     echo "          path with minishift binary or directory where new minishift will be downloaded"
     echo "       -u, --url (optional)"
     echo "          CDK/minishift binary url to download"
-    echo "       -h, --home"
-    echo "          minishift home path, overrides MINISHIFT_HOME"
     echo "       -e, --erase"
     echo "          Will erase minishift binary, created folders and minishift home folder"
     echo "          Use it on your own risk!"
@@ -59,9 +57,11 @@ function check_minishift_bin() {
 
 MINISHIFT_PATH=
 MINISHIFT_URL=
+USER_HOME=
 HOME_FOLDER=
 EXISTING=1
 ERASE=0
+BASEFILE=
 
 # At least one parameter is required
 if [ $# -lt 1 ]
@@ -78,6 +78,7 @@ while [ $# -gt 0 ]; do
                 log_warning "${MINISHIFT_PATH} does not exist, will be created"
                 EXISTING=0
             elif [ -f ${1} ] && [ $(minishift_has_status "${MINISHIFT_PATH}") == 1 ]; then
+                BASEFILE=$(basename ${MINISHIFT_PATH})
                 log_info "Minishift binary ${MINISHIFT_PATH} will be used..."
             elif [ -d ${1} ]; then
                 log_info "${MINISHIFT_PATH} is a folder..."
@@ -86,24 +87,20 @@ while [ $# -gt 0 ]; do
             ;;
         -u | --url)
             shift
-            url_status=$(curl -Is -l ${1} | head -n 1 | grep -i ok)
+            url_status=$(http_status_ok ${1})
             log_info "Trying to reach ${1}"
             log_info "URL status: $url_status"
             if [ "${url_status}" ]; then
-                MINISHIFT_URL="${1}"
+                if [ $(url_has_minishift ${1}) == "1" ]; then
+                    MINISHIFT_URL="${1}"
+                else 
+                    MINISHIFT_URL="$(add_url_suffix ${1})"
+                fi
+                BASEFILE=$(basename ${MINISHIFT_URL})
             else
                 log_error "Given minishift url ${1} cannot be reached"
                 exit 1
             fi
-            ;;
-        -h | --home)
-            shift
-            HOME_FOLDER=${1}
-            if [ ! -d ${1} ]; then
-                log_error "${HOME_FOLDER} does not exist..."
-                exit 1
-            fi
-            export MINISHIFT_HOME=${HOME_FOLDER}
             ;;
         -e | --erase)
             ERASE=1
@@ -116,6 +113,12 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+HOME_ADDR="${HOME}"
+if [ "$(get_os_platform)" == "win" ]; then
+    HOME_ADDR="${USERPROFILE}"
+fi
+log_info "User's home folder is at ${HOME_ADDR}"
+
 if [ -z $MINISHIFT_PATH ]; then
     log_error "--p or --path cannot be empty"
     usage
@@ -126,8 +129,8 @@ fi
 # without minishift_home defined in previous jenkins job
 if [ -n "${MINISHIFT_HOME}" ]; then
     log_info "Minishift home is set with MINISHIFT_HOME env. var., ${MINISHIFT_HOME}"
-elif [ -d "${HOME}/.minishift" ]; then
-        HOME_FOLDER="${HOME}/.minishift"
+elif [ -d "${HOME_ADDR}/.minishift" ]; then
+        HOME_FOLDER="${HOME_ADDR}/.minishift"
         log_info "Minishift home is at ${HOME_FOLDER}"
 else
     log_warning "Minishift home does not exist, cannot clean old minishift configuration"
@@ -136,18 +139,12 @@ fi
 
 log_info "Script parameters:"
 log_info "MINISHIFT_PATH: ${MINISHIFT_PATH}"
+log_info "Basefile name is: ${BASEFILE}"
 log_info "MINISHIFT_URL: ${MINISHIFT_URL:-"Not set"}"
 
 # Start script main part
 if [ $EXISTING == 1 ]; then
     log_info "Checking existence of actual minishift instance..."
-    # check for every "minishift" file in the given path
-    #MINISHIFT_BIN=$(find $MINISHIFT_PATH -type f -name "minishift" 2>&1 | grep -i minishift)
-    # check whether there is multiple minishift files in the path
-    # check_minishift_bin $MINISHIFT_BIN
-    # if there is an existing minishift binary, try to clean everything
-    #if [ -f $MINISHIFT_BIN ] && [ $MINISHIFT_BIN ]; then
-        # try to stop and/or delete minishift 
     minishift_cleanup $MINISHIFT_PATH
     # remove the direcotry with minishift
     if [ $ERASE == 1 ]; then
@@ -167,7 +164,7 @@ else
             log_info "Downloading minishift from ${MINISHIFT_URL}"
             log_info "to $MINISHIFT_PATH"
             wget $MINISHIFT_URL
-            if [ ! -f $MINISHIFT_PATH/minishift ]; then
+            if [ ! -f "${MINISHIFT_PATH}/${BASEFILE}" ]; then
                 log_info "Content of $MINISHIFT_PATH"
                 log_info "$(ls $MINISHIFT_PATH)"
                 if [ $ERASE == 1 ]; then
@@ -176,8 +173,8 @@ else
                 log_error "Minishift file was not downloaded from $MINISHIFT_URL, please, check the given url"
                 exit 1
             fi
-            chmod +x minishift
-            MINISHIFT_BIN=$(realpath minishift)
+            chmod +x ${BASEFILE}
+            MINISHIFT_BIN=$(realpath ${BASEFILE})
             # stop/delete minishift
             minishift_cleanup $MINISHIFT_BIN
             if [ $ERASE == 1 ]; then
@@ -196,3 +193,5 @@ fi
 if [ $ERASE == 1 ]; then
     clear_minishift_home
 fi
+
+log_info "Script ${__base} was finished..."

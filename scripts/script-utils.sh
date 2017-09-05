@@ -14,12 +14,13 @@ function log_warning {
     echo "[WARNING] $@"
 }
 
-STATUS_SETUP="You need to run 'minishift setup-cdk' first to install required CDK components"
+STATUS_SETUP="setup-cdk"
 STATUS_NONEXISTING="Does Not Exist"
 STATUS_RUNNING="Running"
 STATUS_STOPPED="Stopped"
+STATUS_PAUSED="Paused"
 
-declare -r STATUSES=("${STATUS_SETUP}" "${STATUS_NONEXISTING}" "${STATUS_RUNNING}" "${STATUS_STOPPED}")
+declare -r STATUSES=("${STATUS_SETUP}" "${STATUS_NONEXISTING}" "${STATUS_RUNNING}" "${STATUS_STOPPED}" "${STATUS_PAUSED}")
 
 # Takes one parameter and checks whether given file is minishift binary file
 # Beware, minishift version creates minishift folder structure in minishift_home
@@ -62,16 +63,12 @@ function minishift_has_status {
 
 # checks if minishift setup-cdk was called
 function minishift_not_initialized {
-    if [ -f ${1} ]; then
-        output="$($(realpath ${1}) status)"
-        if [[ "${output}" == *"${STATUS_SETUP}"* ]]; then
-            echo 1
-        else 
-            echo 0
-        fi
-    else
+    local output="$($(realpath ${1}) status)"
+    if [[ "${output}" == *"${STATUS_SETUP}"* ]]; then
+        echo 1
+     else 
         echo 0
-    fi   
+    fi 
 }
 
 function clear_minishift_home {
@@ -81,8 +78,16 @@ function clear_minishift_home {
         delete_path ${1}
     elif [ -z ${MINISHIFT_HOME+x} ]; then
         log_info "MINISHIFT_HOME is not set"
-        if [ -d ${HOME}/.minishift ]; then
-            delete_path ${HOME}/.minishift
+        HOME_ADDRESS=${HOME}
+        if [ $(get_os_platform) == "win" ]; then
+            HOME_ADDRESS=${USERPROFILE}
+        fi
+        log_info "Searching for .minishift in ${HOME_ADDRESS}"
+        if [ -d ${HOME_ADDRESS}/.minishift ]; then
+            log_info ".minishift exists"
+            delete_path ${HOME_ADDRESS}/.minishift
+        else
+            log_info "There is no .minishift folder in user's home: ${HOME_ADDRESS}"
         fi
     elif [ -d "${MINISHIFT_HOME}" ]; then
         log_info "MINISHIFT_HOME is set to ${MINISHIFT_HOME}"
@@ -94,4 +99,40 @@ function clear_minishift_home {
     else
         log_info "Nothing to clear"
     fi
+}
+
+# return os/kernel that script runs on
+function get_os_platform {
+    if [[ "$(uname)" = *CYGWIN* ]]; then 
+        echo "win"
+    elif [[ "$(uname)" = *Linux* ]]; then 
+        echo "linux"
+    else 
+        echo $(uname)
+    fi
+}
+
+function add_url_suffix {
+    if [ "$(get_os_platform)" == "linux" ]; then
+        echo "${1}/linux-amd64/minishift"
+    elif [ "$(get_os_platform)" == "win" ]; then
+        echo "${1}/windows-amd64/minishift.exe"
+    else
+        echo "It is another os: $(get_os_platform)"
+        exit -1
+    fi
+}
+
+# checks whether basename of url contains word minishift
+function url_has_minishift {
+    if [[ $(basename ${1}) = *minishift* ]]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+# returns http status only if status is in class 2 or 3 (2xx - successful or 3xx - redirected)
+function http_status_ok {
+    echo $(curl -Is -l ${1} | head -n 1 | grep -i http/1 | awk {'print $2'} | grep -E '2[0-9]{2}|3[0-9]{2}')
 }

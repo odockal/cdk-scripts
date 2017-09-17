@@ -68,6 +68,7 @@ if [ ${IS_SOURCE} == 0 ]; then
                     log_error "Given minishift binary path ${1} is not a file or does not exist"
                     exit 1
                 fi
+                log_info "${__base} script finished successfully..."
                 ;;
             *)
                 usage
@@ -76,5 +77,3 @@ if [ ${IS_SOURCE} == 0 ]; then
         shift
     done
 fi
-
-log_info "${__base} script finished successfully"

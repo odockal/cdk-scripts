@@ -32,11 +32,20 @@ if [ "$(get_os_platform)" == "win" ]; then
 	# check if Win32_Processor.VirtualizationFirmwareEnabled property exists
 	log_info "Checking if Win32_Processor.VirtualizationFirmwareEnabled property exists... "
     EXISTS="$(powershell.exe "@(gwmi -Class Win32_Processor)[0].psobject.properties.name -contains 'VirtualizationFirmwareEnabled'" | tr -d '\r\n')"
-    log_info "Is Virtualization on: $EXISTS"
+    log_info "Property exists: $EXISTS"
 	if [ "$EXISTS" == "True" ]; then
     	VIRTUALIZATION_ENABLED="$(powershell.exe "@(gwmi -Class Win32_Processor)[0] | Select -ExpandProperty VirtualizationFirmwareEnabled" | tr -d '\r\n')"
-	fi
-else 
+	else
+        if [ "$(is_windows7)" == "1" ]; then
+            log_info "OS is Windows 7"
+        	CPU_MODEL="$(powershell.exe "@(gwmi -Class Win32_Processor)[0] | Select -ExpandProperty Name" | tr -d '\r\n')"
+            log_info "CPU model: ${CPU_MODEL}"
+            if [[ ! ${CPU_MODEL} == *Haswell* ]]; then
+            	VIRTUALIZATION_ENABLED="True"
+            fi
+        fi
+    fi
+else
 	if [[ "$(lscpu | grep Virtualization:)" == *VT-x* ]]; then
     VIRTUALIZATION_ENABLED="True"
     fi

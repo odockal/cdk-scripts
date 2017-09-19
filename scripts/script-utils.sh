@@ -136,3 +136,17 @@ function url_has_minishift {
 function http_status_ok {
     echo $(curl -Is -l ${1} | head -n 1 | grep -i http/1 | awk {'print $2'} | grep -E '2[0-9]{2}|3[0-9]{2}')
 }
+
+# check if underline os is windows 7, returns 1 if yes, 0 otherwise
+function is_windows7 {
+    if [ $(get_os_platform) == "win" ]; then
+        OS_NAME="$(powershell.exe "@(gwmi -Class Win32_OperatingSystem)[0] | Select -ExpandProperty Caption" | tr -d '\r\n' | grep -o "Windows 7")"
+        if [ "$OS_NAME" == "Windows 7" ]; then
+            echo 1
+        else
+            echo 0
+        fi
+    else
+        echo 0
+    fi
+}

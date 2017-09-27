@@ -97,7 +97,8 @@ if [ -n "${SETUP_CDK}" ]; then
     log_info "Minishift ${SETUP_CDK} will be called"
 fi
 
-wget -O "${BASEFILE}" ${MINISHIFT_URL}
+#wget -O "${BASEFILE}" ${MINISHIFT_URL}
+curl ${MINISHIFT_URL} -o ${BASEFILE}
 if [ $? == 1 ]; then
     log_error "Downloading ${MINISHIFT_URL} fails to save the file as minishift"
     exit 1

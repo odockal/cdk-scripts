@@ -148,7 +148,7 @@ if [ $EXISTING == 1 ]; then
     minishift_cleanup $MINISHIFT_PATH
     # remove the direcotry with minishift
     if [ $ERASE == 1 ]; then
-        delete_path "$(dirname $(realpath ${MINISHIFT_PATH}))"
+        delete_path "$(dirname ${MINISHIFT_PATH})"
     fi
 else
 # if there is no minishift file, there still could be running minishift vm
@@ -163,22 +163,22 @@ else
             cd $MINISHIFT_PATH
             log_info "Downloading minishift from ${MINISHIFT_URL}"
             log_info "to $MINISHIFT_PATH"
-            wget $MINISHIFT_URL
+            curl $MINISHIFT_URL -o ${BASEFILE}
             if [ ! -f "${MINISHIFT_PATH}/${BASEFILE}" ]; then
                 log_info "Content of $MINISHIFT_PATH"
                 log_info "$(ls $MINISHIFT_PATH)"
                 if [ $ERASE == 1 ]; then
-                    delete_path "$(dirname $(realpath $MINISHIFT_PATH))" 
+                    delete_path "$(dirname $MINISHIFT_PATH)" 
                 fi
                 log_error "Minishift file was not downloaded from $MINISHIFT_URL, please, check the given url"
                 exit 1
             fi
             chmod +x ${BASEFILE}
-            MINISHIFT_BIN=$(realpath ${BASEFILE})
+            MINISHIFT_BIN=$(get_absolute_filepath ${BASEFILE})
             # stop/delete minishift
             minishift_cleanup $MINISHIFT_BIN
             if [ $ERASE == 1 ]; then
-                delete_path "$(dirname $(realpath $MINISHIFT_PATH))"
+                delete_path "$(dirname $MINISHIFT_PATH)"
             fi
         else
             log_error "Cannot download minishift from $MINISHIFT_URL"

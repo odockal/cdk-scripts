@@ -45,9 +45,13 @@ if [ "$(get_os_platform)" == "win" ]; then
             fi
         fi
     fi
-else
+elif [ "$(get_os_platform)" == "linux" ]; then
 	if [[ "$(lscpu | grep Virtualization:)" == *VT-x* ]]; then
-    VIRTUALIZATION_ENABLED="True"
+        VIRTUALIZATION_ENABLED="True"
+    fi
+elif [ "$(get_os_platform)" == "mac" ]; then
+    if [[ "$(sysctl -a | grep -o VMX)" == *VMX* ]]; then
+        VIRTUALIZATION_ENABLED="True"
     fi
 fi
 

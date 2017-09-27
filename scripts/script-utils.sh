@@ -59,11 +59,7 @@ function call_minishift_version {
 function delete_path {
     if [ -e "${1}" ]; then
         log_info "Deleting ${1}"
-        SUDO=
-        if [ $(get_os_platform) == "mac" ]; then
-            SUDO="sudo"
-        fi
-        ${SUDO} rm -rf ${1}
+        rm -rf ${1}
     else
         log_warning "'${1}' is not a file or a directory"
     fi

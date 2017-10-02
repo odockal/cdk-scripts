@@ -22,12 +22,29 @@ STATUS_PAUSED="Paused"
 
 declare -r STATUSES=("${STATUS_SETUP}" "${STATUS_NONEXISTING}" "${STATUS_RUNNING}" "${STATUS_STOPPED}" "${STATUS_PAUSED}")
 
+# mac does not have realpath command, so this function substituts it
+# takes one parameter (path of the file)
+function get_absolute_filepath {
+    if [ -f ${1} ]; then
+        if [ "$(get_os_platform)" == "mac" ]; then
+            DIR=$(dirname ${1})
+            FILE=$(basename ${1})
+            echo "${DIR}/${FILE}"
+        else
+            echo ${1}
+        fi
+    else
+        log_error "File on path ${1} does not exist"
+        exit 1
+    fi
+}
+
 # Takes one parameter and checks whether given file is minishift binary file
 # Beware, minishift version creates minishift folder structure in minishift_home
 # returns 1 if it succeeds or 0 otherwise
 function call_minishift_version {
     if [ -f ${1} ]; then
-        output="$($(realpath ${1}) version)"
+        output="$($(get_absolute_filepath ${1}) version)"
         if [[ "${output}" == *"Minishift"* ]]; then
             echo 1
         else 
@@ -42,7 +59,11 @@ function call_minishift_version {
 function delete_path {
     if [ -e "${1}" ]; then
         log_info "Deleting ${1}"
-        rm -rf ${1}
+        SUDO=
+        if [ $(get_os_platform) == "mac" ]; then
+            SUDO="sudo"
+        fi
+        ${SUDO} rm -rf ${1}
     else
         log_warning "'${1}' is not a file or a directory"
     fi
@@ -50,7 +71,7 @@ function delete_path {
 
 # Checks whether given path returns one of minishift statuses
 function minishift_has_status {
-    local output="$($(realpath ${1}) status)"
+    local output="$($(get_absolute_filepath ${1}) status)"
     local result=0
     for item in "${STATUSES[@]}"; do
         if [[ "${output}" == *"${item}"* ]]; then
@@ -63,7 +84,7 @@ function minishift_has_status {
 
 # checks if minishift setup-cdk was called
 function minishift_not_initialized {
-    local output="$($(realpath ${1}) status)"
+    local output="$($(get_absolute_filepath ${1}) status)"
     if [[ "${output}" == *"${STATUS_SETUP}"* ]]; then
         echo 1
      else 
@@ -107,7 +128,9 @@ function get_os_platform {
         echo "win"
     elif [[ "$(uname)" = *Linux* ]]; then 
         echo "linux"
-    else 
+    elif [[ "$(uname)" == *Darwin* ]]; then
+        echo "mac"
+    else
         echo $(uname)
     fi
 }
@@ -117,6 +140,8 @@ function add_url_suffix {
         echo "${1}/linux-amd64/minishift"
     elif [ "$(get_os_platform)" == "win" ]; then
         echo "${1}/windows-amd64/minishift.exe"
+    elif [ "$(get_os_platform)" == "mac" ]; then
+        echo "${1}/darwin-amd64/minishift"
     else
         echo "It is another os: $(get_os_platform)"
         exit -1

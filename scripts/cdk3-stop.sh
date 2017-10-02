@@ -29,7 +29,7 @@ function usage {
 # minishift clean up function takes minishift binary path as a parameter
 function minishift_cleanup() {
     # stop-delete minishift
-    local minishift="$(realpath $1)"
+    local minishift="$(get_absolute_filepath ${1})"
     local status="$(${minishift} status)"
     log_info "Minishift status: ${status}"
     if [ "${status}" == "Running" ] || [ "${status}" == "Paused" ]; then

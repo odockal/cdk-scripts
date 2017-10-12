@@ -42,7 +42,7 @@ if [ "$(get_os_platform)" == "win" ]; then
             log_info "CPU model: ${CPU_MODEL}"
             log_warning "Cannot decide if virtualization is enabled or not..."
             # if [[ ! ${CPU_MODEL} == *Haswell* ]]; then
-            #	VIRTUALIZATION_ENABLED="True"
+            VIRTUALIZATION_ENABLED="True"
             # fi
         fi
     fi

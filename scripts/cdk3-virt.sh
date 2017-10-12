@@ -40,9 +40,10 @@ if [ "$(get_os_platform)" == "win" ]; then
             log_info "OS is Windows 7"
         	CPU_MODEL="$(powershell.exe "@(gwmi -Class Win32_Processor)[0] | Select -ExpandProperty Name" | tr -d '\r\n')"
             log_info "CPU model: ${CPU_MODEL}"
-            if [[ ! ${CPU_MODEL} == *Haswell* ]]; then
-            	VIRTUALIZATION_ENABLED="True"
-            fi
+            log_warning "Cannot decide if virtualization is enabled or not..."
+            # if [[ ! ${CPU_MODEL} == *Haswell* ]]; then
+            #	VIRTUALIZATION_ENABLED="True"
+            # fi
         fi
     fi
 elif [ "$(get_os_platform)" == "linux" ]; then

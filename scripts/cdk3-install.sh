@@ -14,8 +14,8 @@ __base="$(basename ${__file} .sh)"
 function usage {
     echo "Minishift install script"
     echo "Synopsis:"
-    echo "       -u minishift_url -p minishift_path -s setup_params"
-    echo "Usage  $0 -u [-p]"
+    echo "       -u MINISHIFT_URL [-p] PATH_TO_MINISHIFT [-s] [SETUP_PARAMS]"
+    echo "Usage  $0 -u MINISHIFT_URL [-p] PATH_TO_MINISHIFT [-s] [SETUP_PARAMS]"
     echo "       -u, --url (required)"
     echo "          CDK/minishift binary url to download, will overwrite existing minishift file"
     echo "       -p, --path (optional)"
@@ -29,6 +29,8 @@ MINISHIFT_PATH=$(pwd)
 MINISHIFT_URL=
 EXISTING=1
 SETUP_CDK=
+SETUP_PARAMS=
+IS_CDK=1
 
 # At least one parameter is required
 if [ $# -lt 2 ]
@@ -72,7 +74,13 @@ while [ $# -gt 0 ]; do
             shift
             SETUP_CDK="setup-cdk"
             if [ -n "${1}" ]; then
-                SETUP_CDK="${SETUP_CDK} ${1}"
+                # we need to assure that -s flag has optinal parameter, so if another flag follows, we should skip passing that flag as a -s parameter
+                if [[ ${1} =~ (^-[pu])|^--(path)|(^--(url)) ]]; then
+                    continue
+                else
+                    SETUP_CDK="${SETUP_CDK} ${1}"
+                    SETUP_PARAMS="${1}"
+                fi
             fi
             ;;
         *)
@@ -93,28 +101,64 @@ BASEFILE=$(basename ${MINISHIFT_URL})
 log_info "Basefile name is: ${BASEFILE}"
 log_info "Downloading minishift from ${MINISHIFT_URL}"
 log_info "to $MINISHIFT_PATH"
-if [ -n "${SETUP_CDK}" ]; then
-    log_info "Minishift ${SETUP_CDK} will be called"
-fi
 
-#wget -O "${BASEFILE}" ${MINISHIFT_URL}
-curl ${MINISHIFT_URL} -o ${BASEFILE}
+# wget -O "${BASEFILE}" ${MINISHIFT_URL}
+# consider using -k param to download using https
+curl -L ${MINISHIFT_URL} -o ${BASEFILE}
 if [ $? == 1 ]; then
-    log_error "Downloading ${MINISHIFT_URL} fails to save the file as minishift"
+    log_error "Downloading ${MINISHIFT_URL} fails to save the file as ${BASEFILE}"
     exit 1
 fi
+
+ARCHIVE="${BASEFILE##*.}"
+if [ "${ARCHIVE}" == "tgz" ]; then
+    IS_CDK=0
+    tar --strip-components=1 -xvzf ${BASEFILE}
+    BASEFILE=$(basename minishift)
+    log_info "Basefile name has changed to: ${BASEFILE}"
+elif [ "${ARCHIVE}" == "zip" ]; then
+    IS_CDK=0
+    unzip -j ${BASEFILE}
+    BASEFILE=$(basename minishift.exe)
+    log_info "Basefile name has changed to: ${BASEFILE}"
+fi
+
+if [ ${IS_CDK} == 1 ]; then
+    if [ -n "${SETUP_CDK}" ]; then
+        log_info "'minishift ${SETUP_CDK}' will be called"
+    fi
+else
+    log_warning "Upstream minishift does not use setup-cdk command"
+    if [ -n "${SETUP_PARAMS}" ]; then
+        log_info "Instead, minishift config set ${SETUP_PARAMS}"
+    fi
+fi
+
+# distinguish between minishift's archive file (upstream minishift) - unzip it, skip calling setup-cdk
+# or check output from minishift version
 
 log_info "Make the file executable"
 chmod +x ${BASEFILE}
 
-if [ $(minishift_not_initialized "${MINISHIFT_PATH}/${BASEFILE}") == 1 ]; then
-    log_info "Minishift was not initialized"
-    if [ -n "${SETUP_CDK}" ]; then
-        log_info "Running ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}"
-        ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}
+if [ ${IS_CDK} == 1 ]; then
+    log_info "It is using CDK downstream version"
+    if [ $(minishift_not_initialized "${MINISHIFT_PATH}/${BASEFILE}") == 1 ]; then
+        log_info "Minishift was not initialized"
+        if [ -n "${SETUP_CDK}" ]; then
+            log_info "Running ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}"
+            ${MINISHIFT_PATH}/${BASEFILE} ${SETUP_CDK}
+        else
+            log_warning "'minishift setup-cdk' will not be called, did you forget to set -s flag?"
+        fi
     else
-        log_warning "'minishift setup-cdk' will not be called, did you forget to set -s flag?"
+    log_warning "Minishift was already initialized, it is possible that older minishift configuration was not cleaned up. Consider using of cdk3-cleanup.sh..." 
     fi
+else
+    log_info "It is using upstream Minishift version"
+    if [ -n "${SETUP_PARAMS}" ]; then
+        log_info "Calling: ${BASEFILE} config set ${SETUP_PARAMS}"
+        ${MINISHIFT_PATH}/${BASEFILE} config set ${SETUP_PARAMS}
+    fi    
 fi
 
 log_info "Script $__base was finished successfully"

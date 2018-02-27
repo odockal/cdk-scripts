@@ -145,8 +145,9 @@ log_info "MINISHIFT_URL: ${MINISHIFT_URL:-"Not set"}"
 # Start script main part
 if [ $EXISTING == 1 ]; then
     log_info "Checking existence of actual minishift instance..."
-    minishift_cleanup $MINISHIFT_PATH
-    # remove the direcotry with minishift
+    #minishift_cleanup $MINISHIFT_PATH
+    /bin/bash ${__dir}/cdk3-stop.sh -p ${MINISHIFT_PATH} --all
+    # remove the directory with minishift
     if [ $ERASE == 1 ]; then
         delete_path "$(dirname ${MINISHIFT_PATH})"
     fi
@@ -155,7 +156,7 @@ else
     # Download minishift, make it runnable and checks if there is running minishift vm
     # check that minishift url contains minishift binary file
     if [ -n "${MINISHIFT_URL}" ]; then
-        if [ -n "$(curl -Is -l "${MINISHIFT_URL}" | head -n 1 | grep -i ok)" ]; then
+        if [ "$(http_status_ok ${MINISHIFT_URL})" ]; then
             foldername="minishift_$(date +%Y-%m-%d_%H%M%S)"
             log_info "Creating directory $MINISHIFT_PATH/${foldername}"
             MINISHIFT_PATH=$MINISHIFT_PATH/${foldername}
@@ -163,7 +164,25 @@ else
             cd $MINISHIFT_PATH
             log_info "Downloading minishift from ${MINISHIFT_URL}"
             log_info "to $MINISHIFT_PATH"
-            curl $MINISHIFT_URL -o ${BASEFILE}
+            ########
+            # consider using -k param to download using https
+            curl -L ${MINISHIFT_URL} -o ${BASEFILE}
+            if [ $? == 1 ]; then
+                log_error "Downloading ${MINISHIFT_URL} fails to save the file as ${BASEFILE}"
+                exit 1
+            fi
+
+            ARCHIVE="${BASEFILE##*.}"
+            if [ "${ARCHIVE}" == "tgz" ]; then
+                tar --strip-components=1 -xvzf ${BASEFILE}
+                BASEFILE=$(basename minishift)
+                log_info "Basefile name has changed to: ${BASEFILE}"
+            elif [ "${ARCHIVE}" == "zip" ]; then
+                unzip -j ${BASEFILE}
+                BASEFILE=$(basename minishift.exe)
+                log_info "Basefile name has changed to: ${BASEFILE}"
+            fi
+            ##########
             if [ ! -f "${MINISHIFT_PATH}/${BASEFILE}" ]; then
                 log_info "Content of $MINISHIFT_PATH"
                 log_info "$(ls $MINISHIFT_PATH)"
@@ -174,9 +193,10 @@ else
                 exit 1
             fi
             chmod +x ${BASEFILE}
-            MINISHIFT_BIN=$(get_absolute_filepath ${BASEFILE})
+            MINISHIFT_BIN=$(get_absolute_filepath ${MINISHIFT_PATH}/${BASEFILE})
             # stop/delete minishift
-            minishift_cleanup $MINISHIFT_BIN
+            # minishift_cleanup $MINISHIFT_BIN
+            /bin/bash ${__dir}/cdk3-stop.sh -p ${MINISHIFT_BIN} --all
             if [ $ERASE == 1 ]; then
                 delete_path "$(dirname $MINISHIFT_PATH)"
             fi

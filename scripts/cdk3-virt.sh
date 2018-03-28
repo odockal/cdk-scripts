@@ -12,7 +12,7 @@ __base="$(basename ${__file} .sh)"
 
 # usage output
 function usage {
-    echo "Script that checks whether host, where script is run, supports virtualization"
+    echo "Script that checks whether host, where script is being run, supports virtualization"
     echo "Usage $0"
     echo "          writes out result and if virtualization is not supported, returns exit code 1"
     exit 1

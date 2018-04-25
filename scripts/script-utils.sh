@@ -19,8 +19,9 @@ STATUS_NONEXISTING="Does Not Exist"
 STATUS_RUNNING="Running"
 STATUS_STOPPED="Stopped"
 STATUS_PAUSED="Paused"
+STATUS_ERROR="Error"
 
-declare -rx STATUSES=("${STATUS_SETUP}" "${STATUS_NONEXISTING}" "${STATUS_RUNNING}" "${STATUS_STOPPED}" "${STATUS_PAUSED}")
+declare -rx STATUSES=("${STATUS_SETUP}" "${STATUS_NONEXISTING}" "${STATUS_RUNNING}" "${STATUS_STOPPED}" "${STATUS_PAUSED}" "${STATUS_ERROR}")
 
 # mac does not have realpath command, so this function substituts it
 # takes one parameter (path of the file)

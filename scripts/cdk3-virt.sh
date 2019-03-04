@@ -29,12 +29,22 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$(get_os_platform)" == "win" ]; then
+    # check hyperv feature installed
 	# check if Win32_Processor.VirtualizationFirmwareEnabled property exists
 	log_info "Checking if Win32_Processor.VirtualizationFirmwareEnabled property exists... "
     EXISTS="$(powershell.exe "@(gwmi -Class Win32_Processor)[0].psobject.properties.name -contains 'VirtualizationFirmwareEnabled'" | tr -d '\r\n')"
     log_info "Property exists: $EXISTS"
 	if [ "$EXISTS" == "True" ]; then
     	VIRTUALIZATION_ENABLED="$(powershell.exe "@(gwmi -Class Win32_Processor)[0] | Select -ExpandProperty VirtualizationFirmwareEnabled" | tr -d '\r\n')"
+    	
+    	if [ "${VIRTUALIZATION_ENABLED}" == "False" ]; then
+            # check if there is hyper-v installed, virtualization property could be set to false even though virtualization works
+            HYPERV_INSTALLED="$(powershell.exe "@(gwmi -query \"select * from Win32_OptionalFeature where name like '%Hyper-V-Hypervisor%'\").InstallState")"
+            if [[ "${HYPERV_INSTALLED}" == *"1"* ]]; then
+                log_info "Hyperv is installed on this machine"
+                VIRTUALIZATION_ENABLED="True"
+            fi
+    	fi
 	else
         if [ "$(is_windows7)" == "1" ]; then
             log_info "OS is Windows 7"

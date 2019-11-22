@@ -57,7 +57,9 @@ if [ "$(get_os_platform)" == "win" ]; then
         fi
     fi
 elif [ "$(get_os_platform)" == "linux" ]; then
-	if [[ "$(lscpu | grep Virtualization:)" == *VT-x* ]]; then
+	VIRT="$(lscpu | grep -e "Virtualization.*:")"
+	echo "VIRT:${VIRT}"
+	if [[ ${VIRT} == *VT-x* ]] || [[ ${VIRT} == *full* ]]; then
         VIRTUALIZATION_ENABLED="True"
     fi
 elif [ "$(get_os_platform)" == "mac" ]; then

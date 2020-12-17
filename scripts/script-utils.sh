@@ -130,6 +130,7 @@ function get_os_platform {
     fi
 }
 
+# before chanes on server
 function add_url_suffix {
     if [ "$(get_os_platform)" == "linux" ]; then
         echo "${1}/linux-amd64/minishift"
@@ -141,6 +142,25 @@ function add_url_suffix {
         echo "It is another os: $(get_os_platform)"
         exit -1
     fi
+}
+
+# before chanes on server
+function get_url_os_based {
+    os=""
+    if [ "$(get_os_platform)" == "linux" ]; then
+        os="linux"
+    elif [ "$(get_os_platform)" == "win" ]; then
+        os="windows"
+    elif [ "$(get_os_platform)" == "mac" ]; then
+        os="darwin"
+    else
+        echo "It is another os: $(get_os_platform)"
+        exit -1
+    fi
+    
+    # should=$(curl ${1} | sed -n 's/.*href=\"\(cdk.*linux*\?\)\">cdk.*/\1/p')
+    cdk_file=$(curl ${1} | sed -n "s|.*href=\"\(cdk.*${os}.*\?\)\">cdk.*|\1|p")
+    echo "${1}${cdk_file}"
 }
 
 # checks whether basename of url contains word minishift

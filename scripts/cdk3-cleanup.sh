@@ -94,7 +94,7 @@ while [ $# -gt 0 ]; do
                 if [ $(url_has_minishift ${1}) == "1" ]; then
                     MINISHIFT_URL="${1}"
                 else 
-                    MINISHIFT_URL="$(add_url_suffix ${1})"
+                    MINISHIFT_URL="$(get_url_os_based ${1})"
                 fi
                 BASEFILE=$(basename ${MINISHIFT_URL})
             else
